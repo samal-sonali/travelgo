@@ -2,13 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ArrowDown, ArrowLeftRight, ArrowRight, ArrowUpRight, Bell, CalendarDays, Check, ChevronDown,
-  Compass, CreditCard, Heart, Hotel, Menu, Plane, Search, ShieldCheck, SlidersHorizontal,
-  Sparkles, Star, Sun, Users, X,
+  ArrowLeftRight, ArrowRight, CalendarDays, Check, Compass, CreditCard, Menu, ShieldCheck,
+  SlidersHorizontal, Sun, X,
 } from 'lucide-react';
 import { destinations, flights, imageUrl, packages, stays } from './data/travel.js';
+import { FlightCard, ImageCard } from './components.jsx';
+import Home from './Home.jsx';
+import Planner from './Planner.jsx';
+import Budget from './Budget.jsx';
+import Weather from './Weather.jsx';
 
-const navItems = [['Explore', '/'], ['Stays', '/hotels'], ['Flights', '/flights'], ['Experiences', '/packages'], ['About us', '/about']];
+const navItems = [['Explore', '/'], ['Stays', '/hotels'], ['Flights', '/flights'], ['Experiences', '/packages'], ['AI Planner', '/planner'], ['Budget', '/budget'], ['Weather', '/weather']];
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -30,82 +34,6 @@ function Header() {
       </div>
     </header>
   );
-}
-
-function SearchWidget() {
-  const [active, setActive] = useState('Stays');
-  const [searched, setSearched] = useState(false);
-  return (
-    <div className="search-card">
-      <div className="search-tabs">
-        {[['Stays', Hotel], ['Flights', Plane], ['Packages', Compass]].map(([label, Icon]) =>
-          <button key={label} onClick={() => setActive(label)} className={`search-tab ${active === label ? 'selected' : ''}`}><Icon size={17} />{label}</button>)}
-        <span className="search-note"><ShieldCheck size={14} /> Best price, always</span>
-      </div>
-      <div className="search-fields">
-        <label className="search-field destination-field"><span>{active === 'Flights' ? 'Flying to' : 'Where to?'}</span><div><Search size={17} /><input placeholder="Search destinations" /></div></label>
-        {active === 'Flights' && <button className="swap-button" aria-label="Swap origin and destination"><ArrowLeftRight size={16} /></button>}
-        <label className="search-field"><span>Check in — out</span><div><CalendarDays size={17} /><input placeholder="Add dates" onFocus={(event) => { event.target.type = 'date'; }} /></div></label>
-        <label className="search-field guests-field"><span>Who’s coming?</span><div><Users size={17} /><select defaultValue=""><option value="" disabled>2 guests</option><option>1 guest</option><option>2 guests</option><option>3 guests</option><option>4+ guests</option></select><ChevronDown size={15} /></div></label>
-        <button className="button search-button" onClick={() => setSearched(true)}><Search size={18} /><span>Explore</span></button>
-      </div>
-      {searched && <p className="search-feedback"><Check size={14} /> Your next great trip is just below.</p>}
-    </div>
-  );
-}
-
-function ImageCard({ item, type = 'destination', saved, onSave }) {
-  const [liked, setLiked] = useState(false);
-  const image = imageUrl(item.image, 900);
-  if (type === 'stay') return <article className="stay-card">
-    <div className="card-image stay-image"><img src={image} alt={item.name} loading="lazy" /><button className={`heart-button ${liked ? 'is-liked' : ''}`} onClick={() => { setLiked(!liked); onSave?.(item.name); }} aria-label="Save to wishlist"><Heart size={18} fill={liked ? 'currentColor' : 'none'} /></button><span className="image-label">{item.category}</span></div>
-    <div className="stay-info"><div><h3>{item.name}</h3><p>{item.location}</p></div><span className="rating"><Star size={14} fill="currentColor" /> {item.rating}</span></div>
-    <p className="stay-price"><strong>{item.price}</strong> <span>/ night</span></p>
-  </article>;
-  if (type === 'package') return <article className="package-card"><div className="package-image"><img src={image} alt={item.name} loading="lazy" /><span className="package-label">{item.label}</span><button className={`heart-button ${liked ? 'is-liked' : ''}`} onClick={() => setLiked(!liked)} aria-label="Save package"><Heart size={18} fill={liked ? 'currentColor' : 'none'} /></button></div><div className="package-content"><p className="eyebrow">{item.place}</p><h3>{item.name}</h3><div className="package-bottom"><span>{item.days}</span><strong>from {item.price}</strong></div></div></article>;
-  return <Link to="/destinations" className="destination-card"><img src={image} alt={item.name} loading="lazy" /><div className="destination-overlay"><span>{item.tag}</span><h3>{item.name}</h3><p>{item.country} <span>·</span> from {item.price}</p></div><span className="destination-arrow"><ArrowUpRight size={19} /></span></Link>;
-}
-
-function FlightCard({ flight }) {
-  return <article className="flight-card"><div className="airline-mark">{flight.mark}</div><div className="flight-airline"><strong>{flight.airline}</strong><span>{flight.code} · Economy</span></div><div className="flight-time"><strong>{flight.departure}</strong><span>{flight.from}</span></div><div className="flight-duration"><span>{flight.duration}</span><i /><span>{flight.stops}</span></div><div className="flight-time"><strong>{flight.arrival}</strong><span>{flight.to}</span></div><div className="flight-price"><strong>{flight.price}</strong><span>/ person</span></div><Link to="/booking" className="button button-dark">Select <ArrowRight size={14} /></Link></article>;
-}
-
-function SectionHeading({ eyebrow, title, text, link = 'View all' }) {
-  return <div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2>{text && <p className="section-description">{text}</p>}</div><Link to="/destinations" className="text-link">{link}<ArrowRight size={16} /></Link></div>;
-}
-
-function Home() {
-  return <>
-    <section className="hero">
-      <div className="hero-image" />
-      <div className="hero-shade" />
-      <div className="hero-content">
-        <div className="hero-kicker"><span className="live-dot" /> YOUR NEXT CHAPTER STARTS HERE</div>
-        <h1>Find your<br /><em>somewhere.</em></h1>
-        <p>Thoughtful trips, beautiful places, and the little moments you’ll talk about for years.</p>
-        <div className="hero-pills"><span><Check size={14} /> Handpicked stays</span><span><Check size={14} /> Local-first experiences</span></div>
-      </div>
-      <div className="hero-caption"><span>01 / 04</span><span className="caption-rule" /><span>Praiano, Amalfi Coast</span></div>
-      <div className="hero-bottom"><span>SCROLL TO EXPLORE</span><ArrowDown size={16} /></div>
-    </section>
-    <div className="search-wrap"><SearchWidget /></div>
-    <main>
-      <section className="content-section destinations-section">
-        <div className="section-topline"><SectionHeading eyebrow="A LITTLE INSPIRATION" title={<>Somewhere <em>special.</em></>} text="The places our well-travelled community can’t stop talking about." /><div className="carousel-controls"><button aria-label="Previous destinations"><ArrowRight className="flip-arrow" size={17} /></button><button aria-label="Next destinations"><ArrowRight size={17} /></button></div></div>
-        <div className="destination-grid">{destinations.map((item) => <ImageCard item={item} key={item.name} />)}</div>
-      </section>
-      <section className="content-section stay-section"><SectionHeading eyebrow="STAY A LITTLE LONGER" title={<>Places worth <em>checking in.</em></>} text="Not just a room for the night. A reason to love where you wake up." /><div className="stay-grid">{stays.map((item) => <ImageCard item={item} type="stay" key={item.name} />)}</div></section>
-      <section className="editorial-banner"><div className="editorial-copy"><p className="eyebrow">THE TRAVELGO WAY</p><h2>Less itinerary.<br /><em>More in the moment.</em></h2><p>We believe the best trips leave a little room for the unexpected. Tell us what moves you, and we’ll take care of the rest.</p><Link to="/about" className="button button-dark">Get to know us <ArrowRight size={16} /></Link></div><div className="editorial-image"><img src={imageUrl('photo-1470770841072-f978cf4d019e', 1200)} alt="Quiet lake surrounded by mountains" loading="lazy" /><div className="image-stamp"><Sparkles size={17} /><span>Made for<br />the way you travel</span></div></div></section>
-      <section className="content-section package-section"><SectionHeading eyebrow="A GOOD PLACE TO START" title={<>A trip with your name <em>on it.</em></>} text="Considered little getaways, with all the good bits already figured out." /><div className="package-grid">{packages.map((item) => <ImageCard item={item} type="package" key={item.name} />)}</div></section>
-      <section className="quote-section"><div className="quote-mark">“</div><blockquote>Travel isn’t always about going far. Sometimes it’s about seeing differently.</blockquote><div className="quote-byline"><img src={imageUrl('photo-1534528741775-53994a69daeb', 100)} alt="Portrait of Camille" /><div><strong>Camille R.</strong><span>TravelGo guest, 12 trips and counting</span></div><div className="quote-stars">★★★★★</div></div></section>
-      <Newsletter />
-    </main>
-  </>;
-}
-
-function Newsletter() {
-  const [done, setDone] = useState(false);
-  return <section className="newsletter"><div><p className="eyebrow">A NOTE FROM SOMEWHERE</p><h2>A little inspiration,<br /><em>delivered.</em></h2><p>New places, thoughtful guides, and the occasional very good offer. No noise, ever.</p></div><form onSubmit={(e) => { e.preventDefault(); setDone(true); }}><label htmlFor="newsletter-email">Your email address</label><div className="newsletter-input"><input id="newsletter-email" type="email" required placeholder="you@example.com" /><button aria-label="Subscribe"><ArrowRight size={18} /></button></div><small>{done ? 'You’re on the list. Keep an eye on your inbox!' : 'By subscribing, you agree to our privacy policy.'}</small></form></section>;
 }
 
 function Footer() {
@@ -160,5 +88,5 @@ function ScrollToTop() {
 }
 export default function App() {
   const location = useLocation();
-  return <div className="app-shell"><ScrollToTop /><Header /><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.25 }}><Routes location={location}><Route path="/" element={<Home />} /><Route path="/flights" element={<ListingPage title="Flights" type="flight" />} /><Route path="/hotels" element={<ListingPage title="Hotels" type="stay" />} /><Route path="/packages" element={<ListingPage title="Holiday Packages" type="package" />} /><Route path="/destinations" element={<ListingPage title="Destinations" />} /><Route path="/destinations/:slug" element={<DetailPage />} /><Route path="/booking" element={<BookingPage />} /><Route path="/payment" element={<PaymentPage />} /><Route path="/trips" element={<SimplePage title="My Trips" />} /><Route path="/wishlist" element={<SimplePage title="Wishlist" />} /><Route path="/login" element={<AuthPage />} /><Route path="/register" element={<AuthPage register />} /><Route path="/profile" element={<SimplePage title="Profile" />} /><Route path="/contact" element={<SimplePage title="Contact" />} /><Route path="/about" element={<SimplePage title="About" />} /><Route path="*" element={<NotFound />} /></Routes></motion.div></AnimatePresence><Footer /></div>;
+  return <div className="app-shell"><ScrollToTop /><Header /><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.25 }}><Routes location={location}><Route path="/" element={<Home />} /><Route path="/planner" element={<Planner />} /><Route path="/budget" element={<Budget />} /><Route path="/weather" element={<Weather />} /><Route path="/flights" element={<ListingPage title="Flights" type="flight" />} /><Route path="/hotels" element={<ListingPage title="Hotels" type="stay" />} /><Route path="/packages" element={<ListingPage title="Holiday Packages" type="package" />} /><Route path="/destinations" element={<ListingPage title="Destinations" />} /><Route path="/destinations/:slug" element={<DetailPage />} /><Route path="/booking" element={<BookingPage />} /><Route path="/payment" element={<PaymentPage />} /><Route path="/trips" element={<SimplePage title="My Trips" />} /><Route path="/wishlist" element={<SimplePage title="Wishlist" />} /><Route path="/login" element={<AuthPage />} /><Route path="/register" element={<AuthPage register />} /><Route path="/profile" element={<SimplePage title="Profile" />} /><Route path="/contact" element={<SimplePage title="Contact" />} /><Route path="/about" element={<SimplePage title="About" />} /><Route path="*" element={<NotFound />} /></Routes></motion.div></AnimatePresence><Footer /></div>;
 }
