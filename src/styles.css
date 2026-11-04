@@ -319,9 +319,9 @@ img { display: block; max-width: 100%; }
 .planner-form label b { position: absolute; right: 0; top: 0; font-weight: 600; color: var(--coral-dark); }
 .planner-form label:has(b) { position: relative; }
 .planner-form small { font-size: 10px; font-weight: 400; color: #5174a8; }
-.planner-input { display: flex; align-items: center; gap: 9px; height: 46px; padding: 0 13px; border: 1px solid #f1e7d9; border-radius: 8px; color: #5579ad; background: #fff; }
+.planner-input { display: flex; align-items: center; gap: 9px; min-width: 0; height: 46px; padding: 0 13px; border: 1px solid #f1e7d9; border-radius: 8px; color: #5579ad; background: #fff; }
 .planner-input:focus-within { border-color: var(--coral); box-shadow: 0 0 0 3px rgba(255,107,74,.15); }
-.planner-input input,.planner-input select { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 13px; font-weight: 500; }
+.planner-input input,.planner-input select { flex: 1; width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 13px; font-weight: 500; }
 .planner-form input[type="range"] { width: 100%; accent-color: var(--coral); }
 .planner-form fieldset { border: 0; padding: 0; margin: 0; }
 .planner-form legend { margin-bottom: 8px; }
@@ -461,7 +461,8 @@ img { display: block; max-width: 100%; }
 .budget-form { position: sticky; top: 96px; display: flex; flex-direction: column; gap: 14px; padding: 24px; background: #fff; border: 1px solid #f2e9dd; border-radius: 12px; box-shadow: 0 16px 40px rgba(12,25,48,.06); }
 .budget-form label { display: flex; flex-direction: column; gap: 8px; font-size: 11px; font-weight: 700; color: #1b386a; }
 .budget-trip { display: flex; flex-direction: column; gap: 14px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
-.budget-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.budget-pair { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.budget-pair>label,.budget-trip>label { min-width: 0; }
 .budget-form-title { margin: 4px 0 0; font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--coral-dark); }
 .cost-label { display: flex; align-items: baseline; gap: 8px; }
 .cost-label small { margin-left: auto; font-size: 10px; font-weight: 400; color: #8a97ad; }
@@ -470,7 +471,7 @@ img { display: block; max-width: 100%; }
 .budget-reset { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 4px 0; color: #5174a8; font-size: 11px; font-weight: 600; cursor: pointer; }
 .budget-reset:hover { color: var(--coral-dark); }
 .budget-results { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-.budget-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.budget-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
 .budget-stat { padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #f2e9dd; }
 .budget-stat>span { display: block; font-size: 11px; font-weight: 600; color: #4f71a4; }
 .budget-stat strong { display: block; margin: 8px 0 6px; font: 600 clamp(26px,3vw,34px) Manrope,sans-serif; letter-spacing: -1px; color: var(--ink); font-variant-numeric: tabular-nums; }
