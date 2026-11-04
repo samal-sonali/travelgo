@@ -8,6 +8,7 @@ import {
 import { destinations, imageUrl } from './data/travel.js';
 import { guides, travelTypes } from './data/planner.js';
 import { describeWeather, forecastUrl } from './weather.js';
+import LottieLoader from './ui/LottieLoader.jsx';
 
 const tiers = [['budget', 'Budget'], ['mid', 'Comfort'], ['luxury', 'Luxury']];
 const money = (n) => `$${Math.round(n).toLocaleString('en-US')}`;
@@ -185,7 +186,7 @@ function PlanResult({ plan }) {
       <div className={plan.overBy ? 'status-warn' : 'status-ok'}>{plan.overBy ? <><AlertTriangle size={16} /> {money(plan.overBy)} over</> : <><Check size={16} /> Within budget</>}</div>
     </div>
     {plan.overBy > 0 && <p className="planner-note"><AlertTriangle size={16} /> Even the budget option is over your limit. Try fewer days, or raise your budget to about {money(chosen.total)}.</p>}
-    <div className="plan-tabs" role="tablist">{tabs.map((t) => <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? 'active-tab' : ''} onClick={() => setTab(t)}>{t}</button>)}</div>
+    <div className="plan-tabs" role="tablist">{tabs.map((t) => <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? 'active-tab' : ''} onClick={() => setTab(t)}>{t}{tab === t && <motion.span layoutId="plan-tab-line" className="tab-line" />}</button>)}</div>
     <div className="plan-panel">
       {tab === 'Day-wise plan' && <DayPlanner days={days} setDays={setDays} original={plan.itinerary} />}
       {tab === 'Costs' && <div className="cost-breakdown">
@@ -198,7 +199,7 @@ function PlanResult({ plan }) {
         <BedDouble size={20} /><p className="eyebrow">{label}</p><h3>{name}</h3><p>{area}</p>
         <div className="option-price"><strong>{money(price)}</strong> / room / night</div>
         <small>{plan.rooms} {plan.rooms === 1 ? 'room' : 'rooms'} × {plan.nights} nights = {money(price * plan.rooms * plan.nights)} · trip total {money(o.total)}</small>
-      </div>; })}</div>}
+      </div>; })}<p className="mock-data-note option-more"><Link to={`/hotels?destination=${place.slug}`} className="inline-link">See and book all hotels in {place.name}</Link></p></div>}
       {tab === 'Food' && <div className="list-grid">{guide.restaurants.map(([name, cuisine, level]) => <div className="list-card" key={name}><UtensilsCrossed size={18} /><div><strong>{name}</strong><span>{cuisine}</span></div><em>{level}</em></div>)}
         <p className="mock-data-note">Food budget: about {money(guide.food[tiers.findIndex(([t]) => t === chosen.tier)])} per person per day.</p></div>}
       {tab === 'Places' && <div className="list-grid">{guide.places.map(([name, tags, cost, tip]) => <div className={`list-card ${tags.includes(plan.type) ? 'list-match' : ''}`} key={name}><MapPin size={18} /><div><strong>{name}</strong><span>{tip}</span></div><em>{cost ? `${money(cost)} pp` : 'Free'}</em></div>)}
@@ -218,7 +219,15 @@ const steps = ['Reading your preferences', 'Matching places to your travel style
 export default function Planner() {
   const [params] = useSearchParams();
   const initial = destinations.some((d) => d.slug === params.get('destination')) ? params.get('destination') : destinations[0].slug;
-  const [form, setForm] = useState({ slug: initial, budget: '3000', days: 5, type: 'culture', people: 2 });
+  // Quick-start links (e.g. from the home page) can preset the form and generate straight away.
+  const clamp = (value, min, max, fallback) => { const n = Number(value); return Number.isFinite(n) && value !== null ? Math.min(max, Math.max(min, Math.round(n))) : fallback; };
+  const [form, setForm] = useState(() => ({
+    slug: initial,
+    budget: String(clamp(params.get('budget'), 100, 1000000, 3000)),
+    days: clamp(params.get('days'), 2, 14, 5),
+    type: travelTypes.some(([t]) => t === params.get('type')) ? params.get('type') : 'culture',
+    people: clamp(params.get('people'), 1, 12, 2),
+  }));
   const [step, setStep] = useState(-1);
   const [plan, setPlan] = useState(null);
   const timers = useRef([]);
@@ -227,7 +236,7 @@ export default function Planner() {
   const update = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
   const generate = (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     timers.current.forEach(clearTimeout);
     setPlan(null);
     setStep(0);
@@ -235,6 +244,7 @@ export default function Planner() {
     steps.forEach((_, i) => { timers.current.push(setTimeout(() => setStep(i + 1), (i + 1) * 450)); });
     timers.current.push(setTimeout(() => { setPlan(buildPlan({ ...form, budget: Number(form.budget) })); setStep(-1); }, steps.length * 450 + 250));
   };
+  useEffect(() => { if (params.get('auto') === '1') generate(); }, []);
 
   return <main className="inner-page planner-page">
     <div className="page-intro"><p className="eyebrow">AI TRIP PLANNER</p><h1>Your trip, <em>planned in seconds.</em></h1><p>Tell us where, how long and how you like to travel. We’ll build the itinerary, the costs and everything in between.</p></div>
@@ -250,7 +260,7 @@ export default function Planner() {
       <div className="planner-output" ref={resultRef}>
         <AnimatePresence mode="wait">
           {step >= 0 && <motion.div key="loading" className="planner-loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <span className="ai-badge"><Sparkles size={20} /></span><h3>Planning your trip…</h3>
+            <LottieLoader size={92} label="Planning your trip" /><h3>Planning your trip…</h3>
             <ul>{steps.map((s, i) => <li key={s} className={i < step ? 'step-done' : i === step ? 'step-active' : ''}>{i < step ? <Check size={14} /> : i === step ? <Loader2 size={14} className="spin" /> : <Circle size={14} />} {s}</li>)}</ul>
           </motion.div>}
           {step < 0 && plan && <PlanResult key={`${plan.place.slug}-${plan.days}-${plan.type}-${plan.people}-${plan.budget}`} plan={plan} />}

@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowRight, ArrowUp, CalendarDays, CloudRain, Droplets, 
 import { destinations } from './data/travel.js';
 import { guides } from './data/planner.js';
 import { describeWeather, forecastUrl } from './weather.js';
+import LottieLoader from './ui/LottieLoader.jsx';
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const seasonLabels = ['Off-season', 'Good', 'Best'];
@@ -100,7 +101,7 @@ export default function Weather() {
     <div className="type-chips weather-places">{destinations.map((d) => <button key={d.slug} className={place.slug === d.slug ? 'chip-active' : ''} onClick={() => setPlace(fromDestination(d))}>{d.name}</button>)}</div>
 
     {state.status === 'error' && <p className="planner-note"><AlertTriangle size={16} /> Couldn’t load the weather right now. Check your connection and <button className="inline-link" onClick={refresh}>try again</button>.</p>}
-    {state.status === 'loading' && <div className="planner-empty"><Loader2 size={26} className="spin" /><h3>Loading live weather…</h3></div>}
+    {state.status === 'loading' && <div className="weather-loading"><div className="current-weather weather-skeleton"><LottieLoader size={80} label="Loading live weather" /><p>Fetching live weather…</p></div><div className="skeleton skeleton-block" /><div className="skeleton skeleton-block tall" /></div>}
 
     {data && <div className={`weather-layout ${state.status === 'refreshing' ? 'is-refreshing' : ''}`}>
       {(() => {

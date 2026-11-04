@@ -15,10 +15,6 @@ export function ImageCard({ item, type = 'destination', onSave }) {
   return <Link to="/destinations" className="destination-card"><img src={image} alt={item.name} loading="lazy" /><div className="destination-overlay"><span>{item.tag}</span><h3>{item.name}</h3><p>{item.country} <span>·</span> from {item.price}</p></div><span className="destination-arrow"><ArrowUpRight size={19} /></span></Link>;
 }
 
-export function FlightCard({ flight }) {
-  return <article className="flight-card"><div className="airline-mark">{flight.mark}</div><div className="flight-airline"><strong>{flight.airline}</strong><span>{flight.code} · Economy</span></div><div className="flight-time"><strong>{flight.departure}</strong><span>{flight.from}</span></div><div className="flight-duration"><span>{flight.duration}</span><i /><span>{flight.stops}</span></div><div className="flight-time"><strong>{flight.arrival}</strong><span>{flight.to}</span></div><div className="flight-price"><strong>{flight.price}</strong><span>/ person</span></div><Link to="/booking" className="button button-dark">Select <ArrowRight size={14} /></Link></article>;
-}
-
 export function SectionHeading({ eyebrow, title, text, link = 'View all', to = '/destinations' }) {
   return <div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2>{text && <p className="section-description">{text}</p>}</div>{link && <Link to={to} className="text-link">{link}<ArrowRight size={16} /></Link>}</div>;
 }

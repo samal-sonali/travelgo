@@ -25,13 +25,6 @@ export const packages = [
   { name: 'Desert & skyline', place: 'Dubai, UAE', days: '4 nights · 5 days', price: '$1,150', image: 'photo-1512453979798-5ea266f8880c', label: 'New', category: 'City', rating: '4.7' },
 ];
 
-export const flights = [
-  { airline: 'Singapore Airlines', code: 'SQ 317', from: 'LHR', to: 'SIN', departure: '11:25', arrival: '07:10', duration: '12h 45m', stops: 'Nonstop', price: '$684', mark: 'SQ' },
-  { airline: 'Qatar Airways', code: 'QR 008', from: 'LHR', to: 'DOH', departure: '14:55', arrival: '00:50', duration: '6h 55m', stops: 'Nonstop', price: '$592', mark: 'QR' },
-  { airline: 'Emirates', code: 'EK 002', from: 'LHR', to: 'DXB', departure: '13:40', arrival: '00:35', duration: '6h 55m', stops: 'Nonstop', price: '$618', mark: 'EK' },
-  { airline: 'Japan Airlines', code: 'JL 044', from: 'LHR', to: 'HND', departure: '09:40', arrival: '07:15', duration: '13h 35m', stops: 'Nonstop', price: '$742', mark: 'JL' },
-];
-
 export const airlines = [
   ['SQ', 'Singapore Airlines'], ['QR', 'Qatar Airways'], ['EK', 'Emirates'], ['JL', 'Japan Airlines'],
   ['LH', 'Lufthansa'], ['AF', 'Air France'], ['BA', 'British Airways'], ['EY', 'Etihad Airways'],

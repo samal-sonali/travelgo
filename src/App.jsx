@@ -1,12 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ArrowLeftRight, ArrowRight, CalendarDays, Check, Compass, CreditCard, Menu, ShieldCheck,
-  SlidersHorizontal, Sun, X,
+  ArrowRight, Check, Compass, CreditCard, Menu, ShieldCheck,
+  SlidersHorizontal, Sparkles, Sun, X,
 } from 'lucide-react';
-import { destinations, flights, imageUrl, packages, stays } from './data/travel.js';
-import { FlightCard, ImageCard } from './components.jsx';
+import { destinations, imageUrl, packages, stays } from './data/travel.js';
+import { ImageCard } from './components.jsx';
+import Flights from './Flights.jsx';
+import Hotels from './Hotels.jsx';
+import NotificationsPage, { NotificationBell } from './Notifications.jsx';
+import { runNotificationChecks } from './notifications.js';
+
+const TravelMap = lazy(() => import('./ui/TravelMap.jsx'));
 import Home from './Home.jsx';
 import Planner from './Planner.jsx';
 import Budget from './Budget.jsx';
@@ -17,16 +23,24 @@ const navItems = [['Explore', '/'], ['Stays', '/hotels'], ['Flights', '/flights'
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dark, setDark] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   return (
-    <header className={`site-header ${dark ? 'dark-header' : ''}`}>
+    <header className={`site-header ${dark ? 'dark-header' : ''} ${scrolled ? 'is-scrolled' : ''}`}>
       <div className="nav-shell">
         <Link to="/" className="brand" aria-label="TravelGo home"><span className="brand-mark"><Compass size={19} /></span>travelgo<span className="brand-period">.</span></Link>
         <nav className={`main-nav ${menuOpen ? 'nav-open' : ''}`}>
-          {navItems.map(([label, path]) => <NavLink key={label} to={path} end={path === '/'} onClick={() => setMenuOpen(false)}>{label}</NavLink>)}
+          {navItems.map(([label, path]) => <NavLink key={label} to={path} end={path === '/'} className={path === '/planner' ? 'nav-ai' : undefined} onClick={() => setMenuOpen(false)}>{({ isActive }) => <>{path === '/planner' ? <><Sparkles size={13} /> {label}<span className="nav-new">New</span></> : label}{isActive && <motion.span layoutId="nav-line" className="nav-line" transition={{ type: 'spring', stiffness: 380, damping: 32 }} />}</>}</NavLink>)}
           <div className="mobile-nav-actions"><Link className="button button-dark" to="/login">Sign in <ArrowRight size={15} /></Link></div>
         </nav>
         <div className="nav-actions">
           <button className="icon-button mode-button" onClick={() => setDark(!dark)} aria-label="Toggle dark mode"><Sun size={18} /></button>
+          <NotificationBell />
           <Link className="sign-in" to="/login">Sign in</Link>
           <Link className="button button-dark nav-cta" to="/trips">My trips <ArrowRight size={15} /></Link>
         </div>
@@ -41,7 +55,6 @@ function Footer() {
 }
 
 const pageCopy = {
-  Flights: ['Find a flight that feels right.', 'Compare handpicked flights and get there without the guesswork.'],
   Hotels: ['Stay somewhere memorable.', 'One-of-a-kind stays, picked for the way you like to travel.'],
   'Holiday Packages': ['Your next escape, all figured out.', 'Thoughtful itineraries with room to make them your own.'],
   Destinations: ['The world is a good place.', 'A few places we think you’ll love getting to know.'],
@@ -54,8 +67,7 @@ const pageCopy = {
 function ListingPage({ title, type }) {
   const items = type === 'stay' ? stays : type === 'package' ? packages : destinations;
   const [filter, setFilter] = useState('Recommended');
-  if (type === 'flight') return <main className="inner-page"><div className="page-intro"><p className="eyebrow">A BETTER WAY THERE</p><h1>{pageCopy[title][0]}</h1><p>{pageCopy[title][1]}</p></div><div className="flight-route"><span>London (LHR)</span><ArrowLeftRight size={16} /><span>Somewhere wonderful</span><span className="route-date"><CalendarDays size={15} /> Sep 14 — Sep 21 · 2 travellers</span></div><div className="listing-toolbar"><span>{flights.length} curated flight options</span><button className="filter-button"><SlidersHorizontal size={16} /> Filters</button><select value={filter} onChange={(e) => setFilter(e.target.value)}><option>Recommended</option><option>Price: low to high</option><option>Shortest duration</option></select></div><div className="flight-list">{flights.map((flight) => <FlightCard flight={flight} key={flight.code} />)}</div><p className="mock-data-note">Sample fares shown for demonstration. Final prices may vary.</p></main>;
-  return <main className="inner-page"><div className="page-intro"><p className="eyebrow">THE TRAVELGO EDIT</p><h1>{pageCopy[title]?.[0] || title}</h1><p>{pageCopy[title]?.[1]}</p></div><div className="listing-toolbar"><span>{items.length * 8} handpicked {type === 'stay' ? 'stays' : type === 'package' ? 'escapes' : 'places'}</span><button className="filter-button"><SlidersHorizontal size={16} /> Filters</button><select value={filter} onChange={(e) => setFilter(e.target.value)}><option>Recommended</option><option>Price: low to high</option><option>Top rated</option></select></div><div className={`listing-grid ${type === 'stay' ? 'stay-grid' : type === 'package' ? 'package-grid' : 'destination-grid'}`}>{[...items, ...items].map((item, i) => <ImageCard key={`${item.name}-${i}`} item={item} type={type} />)}</div></main>;
+  return <main className="inner-page"><div className="page-intro"><p className="eyebrow">THE TRAVELGO EDIT</p><h1>{pageCopy[title]?.[0] || title}</h1><p>{pageCopy[title]?.[1]}</p></div>{!type && <Suspense fallback={<div className="map-skeleton skeleton" />}><TravelMap height={420} /></Suspense>}<div className="listing-toolbar"><span>{items.length * 8} handpicked {type === 'stay' ? 'stays' : type === 'package' ? 'escapes' : 'places'}</span><button className="filter-button"><SlidersHorizontal size={16} /> Filters</button><select value={filter} onChange={(e) => setFilter(e.target.value)}><option>Recommended</option><option>Price: low to high</option><option>Top rated</option></select></div><div className={`listing-grid ${type === 'stay' ? 'stay-grid' : type === 'package' ? 'package-grid' : 'destination-grid'}`}>{[...items, ...items].map((item, i) => <ImageCard key={`${item.name}-${i}`} item={item} type={type} />)}</div></main>;
 }
 function DetailPage() {
   return <main className="inner-page detail-page"><Link to="/destinations" className="text-link"><ArrowRight className="flip-arrow" size={16} /> All destinations</Link><div className="detail-heading"><div><p className="eyebrow">ITALY · COASTAL ESCAPE</p><h1>Amalfi, at your own pace.</h1><p>Where the mountains meet the Mediterranean, and the long way round is always the right one.</p></div><Link to="/booking" className="button button-dark">Plan this trip <ArrowRight size={16} /></Link></div><div className="detail-gallery"><img src={imageUrl('photo-1533105079780-92b9be482077', 1200)} alt="Amalfi coast" /><img src={imageUrl('photo-1516483638261-f4dbaf036963', 700)} alt="Italian village" /><img src={imageUrl('photo-1519046904884-53103b34b206', 700)} alt="Mediterranean sea" /></div><div className="detail-columns"><article><h2>A coastline that asks you to slow down.</h2><p>Take the little road that winds along the water. Stop for a long lunch. Find a quiet cove, and stay until the light turns gold. The Amalfi Coast is less a checklist, more a feeling you’ll want to come back to.</p><h3>Good things to do</h3><p>Ferry-hop between Positano and Amalfi, hike the Path of the Gods, or simply find your own patch of coastline. The best days leave plenty of room for nothing at all.</p></article><aside className="weather-card"><Sun size={26} /><span>THE WEATHER, LATELY</span><strong>24° <small>Sunny, with a breeze</small></strong><Link to="/packages">See our Amalfi escapes <ArrowRight size={15} /></Link></aside></div></main>;
@@ -88,5 +100,10 @@ function ScrollToTop() {
 }
 export default function App() {
   const location = useLocation();
-  return <div className="app-shell"><ScrollToTop /><Header /><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.25 }}><Routes location={location}><Route path="/" element={<Home />} /><Route path="/planner" element={<Planner />} /><Route path="/budget" element={<Budget />} /><Route path="/weather" element={<Weather />} /><Route path="/flights" element={<ListingPage title="Flights" type="flight" />} /><Route path="/hotels" element={<ListingPage title="Hotels" type="stay" />} /><Route path="/packages" element={<ListingPage title="Holiday Packages" type="package" />} /><Route path="/destinations" element={<ListingPage title="Destinations" />} /><Route path="/destinations/:slug" element={<DetailPage />} /><Route path="/booking" element={<BookingPage />} /><Route path="/payment" element={<PaymentPage />} /><Route path="/trips" element={<SimplePage title="My Trips" />} /><Route path="/wishlist" element={<SimplePage title="Wishlist" />} /><Route path="/login" element={<AuthPage />} /><Route path="/register" element={<AuthPage register />} /><Route path="/profile" element={<SimplePage title="Profile" />} /><Route path="/contact" element={<SimplePage title="Contact" />} /><Route path="/about" element={<SimplePage title="About" />} /><Route path="*" element={<NotFound />} /></Routes></motion.div></AnimatePresence><Footer /></div>;
+  useEffect(() => {
+    runNotificationChecks();
+    const id = setInterval(runNotificationChecks, 15 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <div className="app-shell"><ScrollToTop /><Header /><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.25 }}><Routes location={location}><Route path="/" element={<Home />} /><Route path="/planner" element={<Planner />} /><Route path="/budget" element={<Budget />} /><Route path="/weather" element={<Weather />} /><Route path="/notifications" element={<NotificationsPage />} /><Route path="/flights" element={<Flights />} /><Route path="/hotels" element={<Hotels />} /><Route path="/packages" element={<ListingPage title="Holiday Packages" type="package" />} /><Route path="/destinations" element={<ListingPage title="Destinations" />} /><Route path="/destinations/:slug" element={<DetailPage />} /><Route path="/booking" element={<BookingPage />} /><Route path="/payment" element={<PaymentPage />} /><Route path="/trips" element={<SimplePage title="My Trips" />} /><Route path="/wishlist" element={<SimplePage title="Wishlist" />} /><Route path="/login" element={<AuthPage />} /><Route path="/register" element={<AuthPage register />} /><Route path="/profile" element={<SimplePage title="Profile" />} /><Route path="/contact" element={<SimplePage title="Contact" />} /><Route path="/about" element={<SimplePage title="About" />} /><Route path="*" element={<NotFound />} /></Routes></motion.div></AnimatePresence><Footer /></div>;
 }

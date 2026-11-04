@@ -1,16 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, animate, motion, useInView } from 'framer-motion';
 import {
-  ArrowDown, ArrowRight, BadgePercent, CalendarCheck, Clock, Headphones, Pause, Play,
-  Plane, ShieldCheck, Sparkles, Star,
+  ArrowDown, ArrowRight, BadgePercent, BedDouble, CalendarCheck, CalendarDays, Car, Check, Clock, CloudSun, Footprints,
+  Headphones, Landmark, Pause, Play, Plane, Search, ShieldCheck, ShoppingBag, Sparkles, Star, UtensilsCrossed, Wallet,
 } from 'lucide-react';
 import { airlines, blogs, destinations, imageUrl, packages, reviews, stats } from './data/travel.js';
 import { ImageCard, Newsletter, SectionHeading } from './components.jsx';
+import Carousel from './ui/Carousel.jsx';
+import { travelTypes } from './data/planner.js';
+
+const TravelMap = lazy(() => import('./ui/TravelMap.jsx'));
 
 // Swap this for your own clip — the poster image shows while it loads or if it fails.
 const HERO_VIDEO = 'https://videos.pexels.com/video-files/1093662/1093662-hd_1920_1080_30fps.mp4';
 const HERO_POSTER = imageUrl('photo-1507525428034-b723cf961d3e', 1920);
+const STATS_VIDEO = 'https://videos.pexels.com/video-files/2169880/2169880-hd_1920_1080_30fps.mp4';
+const SEARCH_EVENT = 'travelgo-ai-search';
+const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
+const rise = { hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } } };
 
 const reveal = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: '-80px' }, transition: { duration: 0.6, ease: 'easeOut' } };
 
@@ -56,6 +64,11 @@ function AISearch() {
   const [plan, setPlan] = useState(null);
   const timer = useRef();
   useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(() => {
+    const onSearch = (e) => run(e.detail);
+    window.addEventListener(SEARCH_EVENT, onSearch);
+    return () => window.removeEventListener(SEARCH_EVENT, onSearch);
+  }, []);
   const run = (text) => {
     if (!text.trim()) return;
     setQuery(text);
@@ -63,7 +76,7 @@ function AISearch() {
     clearTimeout(timer.current);
     timer.current = setTimeout(() => { setPlan(planTrip(text)); setStatus('done'); }, 900);
   };
-  return <div className="ai-search">
+  return <div className="ai-search" id="hero-search">
     <form className="ai-search-bar" onSubmit={(e) => { e.preventDefault(); run(query); }}>
       <span className="ai-badge"><Sparkles size={17} /></span>
       <label htmlFor="ai-query" className="sr-only">Describe your dream trip</label>
@@ -87,6 +100,31 @@ function AISearch() {
   </div>;
 }
 
+function FloatingSearch() {
+  const [visible, setVisible] = useState(false);
+  const [text, setText] = useState('');
+  useEffect(() => {
+    const target = document.getElementById('hero-search');
+    if (!target) return undefined;
+    const observer = new IntersectionObserver(([entry]) => setVisible(!entry.isIntersecting && entry.boundingClientRect.top < 0));
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
+  const submit = (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.dispatchEvent(new CustomEvent(SEARCH_EVENT, { detail: text }));
+    setText('');
+  };
+  return <AnimatePresence>{visible && <motion.form className="floating-search glass" onSubmit={submit}
+    initial={{ y: 80, opacity: 0, x: '-50%' }} animate={{ y: 0, opacity: 1, x: '-50%' }} exit={{ y: 80, opacity: 0, x: '-50%' }} transition={{ type: 'spring', stiffness: 300, damping: 28 }}>
+    <span className="ai-badge"><Sparkles size={15} /></span>
+    <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Where to next?" aria-label="Describe your dream trip" />
+    <button className="button button-gradient" aria-label="Search"><Search size={16} /></button>
+  </motion.form>}</AnimatePresence>;
+}
+
 function VideoHero() {
   const video = useRef(null);
   const [playing, setPlaying] = useState(true);
@@ -105,9 +143,74 @@ function VideoHero() {
       <h1>Find your<br /><em>somewhere.</em></h1>
       <p>Tell us what you’re dreaming of, in your own words. We’ll find the places that fit.</p>
       <AISearch />
+      <Link to="/planner" className="hero-planner-link"><Sparkles size={15} /> Want every day planned? <strong>Build my itinerary with the AI Planner</strong> <ArrowRight size={15} /></Link>
     </div>
     <button className="video-toggle" onClick={toggle} aria-label={playing ? 'Pause background video' : 'Play background video'}>{playing ? <Pause size={16} /> : <Play size={16} />}</button>
     <a href="#popular" className="hero-bottom"><span>SCROLL TO EXPLORE</span><ArrowDown size={16} /></a>
+  </section>;
+}
+
+// A sample plan that plays on a loop in the AI Planner showcase.
+const samplePlan = [
+  ['Arrive & settle in', [[Car, 'Airport pickup', 'Haneda → Shinjuku'], [BedDouble, 'Hotel check-in', 'Matched to your budget'], [Landmark, 'Shibuya Crossing & Shibuya Sky', 'Afternoon'], [UtensilsCrossed, 'Dinner at Gonpachi', 'Izakaya · $'], [Footprints, 'Night walk through neon Shinjuku', 'Night']]],
+  ['Mount Fuji & Lake Kawaguchi', [[Car, 'Bus to Mount Fuji', 'Morning · 2 hours'], [Landmark, 'Mount Fuji 5th Station', 'Late morning'], [Landmark, 'Lake Kawaguchi', 'Afternoon'], [ShoppingBag, 'Shopping back in Shinjuku', 'Evening']]],
+  ['Tokyo Disneyland', [[Landmark, 'Tokyo Disneyland', 'Morning'], [Sparkles, 'Parades & rides', 'Afternoon'], [Star, 'Night show & fireworks', 'Evening']]],
+];
+const plannerFeatures = [[CalendarDays, 'Day-by-day itinerary'], [Wallet, 'Cost estimate & budget check'], [BedDouble, 'Hotels & restaurants'], [CloudSun, 'Live weather & best season']];
+
+function PlannerShowcase() {
+  const navigate = useNavigate();
+  const [day, setDay] = useState(0);
+  const [quick, setQuick] = useState({ destination: 'tokyo', days: '5', type: 'culture' });
+  const ref = useRef(null);
+  const inView = useInView(ref, { margin: '-120px' });
+  useEffect(() => {
+    if (!inView) return undefined;
+    const id = setTimeout(() => setDay((d) => (d + 1) % samplePlan.length), 4200);
+    return () => clearTimeout(id);
+  }, [day, inView]);
+  const start = (e) => {
+    e.preventDefault();
+    navigate(`/planner?${new URLSearchParams({ ...quick, auto: '1' })}`);
+  };
+  const [title, steps] = samplePlan[day];
+
+  return <section className="planner-showcase" ref={ref}>
+    <div className="showcase-glow" aria-hidden="true" />
+    <div className="showcase-inner">
+      <motion.div className="showcase-copy" {...reveal}>
+        <p className="showcase-badge"><Sparkles size={13} /> NEW · AI TRIP PLANNER</p>
+        <h2>Your whole trip,<br /><em>planned in seconds.</em></h2>
+        <p>Pick a place, how long you’ve got and how you like to travel. The AI Planner builds every day, works out the costs, finds hotels and restaurants, and checks the weather.</p>
+        <ul className="showcase-features">{plannerFeatures.map(([Icon, label]) => <li key={label}><span><Icon size={16} /></span>{label}</li>)}</ul>
+        <form className="showcase-form glass" onSubmit={start}>
+          <label>Where<select value={quick.destination} onChange={(e) => setQuick({ ...quick, destination: e.target.value })}>{destinations.map((d) => <option key={d.slug} value={d.slug}>{d.name}</option>)}</select></label>
+          <label>How long<select value={quick.days} onChange={(e) => setQuick({ ...quick, days: e.target.value })}>{[3, 5, 7, 10].map((n) => <option key={n} value={n}>{n} days</option>)}</select></label>
+          <label>Style<select value={quick.type} onChange={(e) => setQuick({ ...quick, type: e.target.value })}>{travelTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <button className="button button-gradient"><Sparkles size={16} /> Generate my trip</button>
+        </form>
+        <Link to="/planner" className="showcase-more">Or open the full planner <ArrowRight size={14} /></Link>
+      </motion.div>
+
+      <motion.div className="showcase-preview" initial={{ opacity: 0, y: 40, rotate: 1.5 }} whileInView={{ opacity: 1, y: 0, rotate: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.7, ease: 'easeOut' }}>
+        <div className="preview-card">
+          <div className="preview-head">
+            <img src={imageUrl('photo-1540959733332-eab4deabeeaf', 600)} alt="" />
+            <div><span>SAMPLE PLAN</span><strong>Tokyo, Japan</strong><small>3 days · Family · 2 travellers</small></div>
+          </div>
+          <div className="preview-days" role="tablist" aria-label="Sample plan days">{samplePlan.map(([name], i) => <button key={name} type="button" role="tab" aria-selected={day === i} className={day === i ? 'is-active' : ''} onClick={() => setDay(i)}>Day {i + 1}{day === i && <motion.span layoutId="preview-day" className="preview-day-bg" />}</button>)}</div>
+          <AnimatePresence mode="wait">
+            <motion.div key={day} className="preview-body" initial="hidden" animate="show" exit={{ opacity: 0, transition: { duration: 0.15 } }} variants={{ show: { transition: { staggerChildren: 0.12 } } }}>
+              <motion.h3 variants={rise}>{title}</motion.h3>
+              <ol>{steps.map(([Icon, name, note]) => <motion.li key={name} variants={{ hidden: { opacity: 0, x: -14 }, show: { opacity: 1, x: 0 } }}><span><Icon size={14} /></span><div><strong>{name}</strong><small>{note}</small></div></motion.li>)}</ol>
+            </motion.div>
+          </AnimatePresence>
+          <div className="preview-foot"><span><Wallet size={14} /> Est. $3,420</span><span className="preview-ok"><Check size={14} /> Within budget</span></div>
+        </div>
+        <div className="preview-chip chip-a glass"><CloudSun size={15} /> 19° · Partly cloudy</div>
+        <div className="preview-chip chip-b glass"><Sparkles size={15} /> Built in 2 seconds</div>
+      </motion.div>
+    </div>
   </section>;
 }
 
@@ -116,7 +219,7 @@ function PopularDestinations() {
   const scroll = (dir) => track.current?.scrollBy({ left: dir * track.current.clientWidth * 0.75, behavior: 'smooth' });
   return <section className="content-section" id="popular">
     <div className="section-topline"><SectionHeading eyebrow="POPULAR RIGHT NOW" title={<>Somewhere <em>special.</em></>} text="The places our well-travelled community can’t stop talking about." /><div className="carousel-controls"><button onClick={() => scroll(-1)} aria-label="Previous destinations"><ArrowRight className="flip-arrow" size={17} /></button><button onClick={() => scroll(1)} aria-label="Next destinations"><ArrowRight size={17} /></button></div></div>
-    <div className="destination-track" ref={track}>{destinations.map((item) => <ImageCard item={item} key={item.name} />)}</div>
+    <motion.div className="destination-track" ref={track} variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-80px' }}>{destinations.map((item) => <motion.div key={item.name} variants={rise}><ImageCard item={item} /></motion.div>)}</motion.div>
   </section>;
 }
 
@@ -133,7 +236,7 @@ function Counter({ value, decimals = 0, suffix }) {
 }
 
 function Stats() {
-  return <section className="stats-band"><div className="stats-inner">{stats.map((stat) => <div className="stat" key={stat.label}><Counter {...stat} /><span>{stat.label}</span></div>)}</div></section>;
+  return <section className="stats-band"><video className="stats-video" src={STATS_VIDEO} poster={imageUrl('photo-1469854523086-cc02fe5d8800', 1600)} autoPlay muted loop playsInline aria-hidden="true" /><div className="stats-shade" /><motion.div className="stats-inner" variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true }}>{stats.map((stat) => <motion.div variants={rise} className="stat glass" key={stat.label}><Counter {...stat} /><span>{stat.label}</span></motion.div>)}</motion.div></section>;
 }
 
 function TrendingPackages() {
@@ -161,6 +264,28 @@ function WhyChooseUs() {
       <h2>Less itinerary.<br /><em>More in the moment.</em></h2>
       <div className="why-grid">{reasons.map(([Icon, title, text], i) => <motion.div className="why-card" key={title} {...reveal} transition={{ ...reveal.transition, delay: i * 0.08 }}><span><Icon size={20} /></span><h3>{title}</h3><p>{text}</p></motion.div>)}</div>
     </div>
+  </section>;
+}
+
+function MapSection() {
+  const ref = useRef(null);
+  const near = useInView(ref, { once: true, margin: '400px' });
+  const placeholder = <div className="map-skeleton skeleton" />;
+  return <section className="content-section" ref={ref}>
+    <SectionHeading eyebrow="EXPLORE THE MAP" title={<>The world, <em>one pin at a time.</em></>} text="Tap a pin to see prices, then plan, book or check the weather in one click." />
+    {near ? <Suspense fallback={placeholder}><TravelMap /></Suspense> : placeholder}
+  </section>;
+}
+
+const gallery = [
+  ['photo-1533105079780-92b9be482077', 'Golden hour on the Amalfi Coast'], ['photo-1540959733332-eab4deabeeaf', 'Tokyo after dark'],
+  ['photo-1537996194471-e657df975ab4', 'Temple gates in Bali'], ['photo-1519681393784-d120267933ba', 'Starlight over the Dolomites'],
+  ['photo-1528127269322-539801943592', 'Limestone peaks of Ha Long Bay'], ['photo-1502602898657-3e91760cbb34', 'A Paris evening'],
+];
+function Gallery() {
+  return <section className="content-section gallery-section">
+    <SectionHeading eyebrow="MOMENTS FROM THE ROAD" title={<>Swipe through <em>somewhere.</em></>} text="A few of our favourite views, shared by travellers like you." link={null} />
+    <motion.div {...reveal}><Carousel autoplay={5000} className="gallery-carousel" label="Travel photo gallery" slides={gallery.map(([id, caption]) => ({ src: imageUrl(id, 1600), alt: caption, caption }))} /></motion.div>
   </section>;
 }
 
@@ -209,14 +334,18 @@ export default function Home() {
   return <>
     <VideoHero />
     <main>
+      <PlannerShowcase />
       <PopularDestinations />
       <Stats />
+      <MapSection />
       <TrendingPackages />
       <WhyChooseUs />
+      <Gallery />
       <Reviews />
       <PartnerAirlines />
       <TravelBlogs />
       <Newsletter />
     </main>
+    <FloatingSearch />
   </>;
 }
